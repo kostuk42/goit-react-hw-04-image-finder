@@ -72,10 +72,10 @@ class App extends Component {
         <Searchbar onSubmit={this.handleFormSubmit}/>
         <ImageGallery images={images} onClick={this.openModal}/>
         {isLoading && <Loader/>}
+        {!isLoading && !images.length && <Notification/>}
         { !isLoading && !!images.length && images.length < total &&(
           <Button onLoadMore={this.handleLoadMore}/>
         )}
-        {!!images.length && !isLoading && <Notification/>}
         {showModal && (
           <Modal onClose={this.closeModal}>
             <img src={selectedImage} alt=""/>
