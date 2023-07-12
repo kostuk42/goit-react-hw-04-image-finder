@@ -5,6 +5,7 @@ import Button from './Button';
 import Modal from './Modal';
 import Loader from './Loader';
 import {getImagesByQueryAndPage} from "../services/fetchImages";
+import Notification from "./Notification";
 
 class App extends Component {
   state = {
@@ -14,33 +15,40 @@ class App extends Component {
     page: 1,
     showModal: false,
     selectedImage: '',
+    total: 0
   };
 
+  whetherToFetchImages = (prevState) => {
+    const {query, page, total, images} = this.state;
+    return query.toLowerCase() !== prevState.query.toLowerCase()
+      || (page !== prevState.page && images.length <= total);
+  }
+
   async componentDidUpdate(prevProps, prevState) {
-    if (prevState.query !== this.state.query) {
+    if (this.whetherToFetchImages(prevState)) {
       await this.fetchImages();
     }
   }
 
   handleFormSubmit = query => {
+    if(this.state.query.toLowerCase() === query.toLowerCase()) return;
     this.setState({query, page: 1, images: []});
   };
 
   handleLoadMore = () => {
     this.setState(prevState => ({
       page: prevState.page + 1,
-    }), async () => {
-      await this.fetchImages();
-    });
+    }));
   };
 
 
   fetchImages = async () => {
     try {
       const {query, page} = this.state;
-      const imagesData = await getImagesByQueryAndPage(query, page);
+      const {hits, totalHits} = await getImagesByQueryAndPage(query, page);
       this.setState(prevState => ({
-        images: [...prevState.images, ...imagesData],
+        images: [...prevState.images, ...hits],
+        total: totalHits
       }));
     } catch (error) {
       console.log(error);
@@ -58,16 +66,16 @@ class App extends Component {
   };
 
   render() {
-    const {images, isLoading, showModal, selectedImage} = this.state;
-
+    const {images, isLoading, showModal, selectedImage, total} = this.state;
     return (
       <div>
         <Searchbar onSubmit={this.handleFormSubmit}/>
         <ImageGallery images={images} onClick={this.openModal}/>
         {isLoading && <Loader/>}
-        {images.length > 0 && !isLoading && (
+        { !isLoading && images.length && images.length < total &&(
           <Button onLoadMore={this.handleLoadMore}/>
         )}
+        {images.length === 0 && !isLoading && <Notification/>}
         {showModal && (
           <Modal onClose={this.closeModal}>
             <img src={selectedImage} alt=""/>

@@ -12,8 +12,9 @@ class ImageGallery extends React.Component {
   }
 
   scrollDown() {
-    if (this.galleryRef.current.lastChild) {
-      this.galleryRef.current.lastChild.scrollIntoView({ behavior: 'smooth' });
+    const { lastChild } = this.galleryRef.current;
+    if (lastChild) {
+      lastChild.scrollIntoView({ behavior: 'smooth' });
     }
   }
 
