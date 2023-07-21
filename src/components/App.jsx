@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useState, useEffect} from 'react';
 import Searchbar from './Searchbar';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
@@ -7,83 +7,71 @@ import Loader from './Loader';
 import {getImagesByQueryAndPage} from "../services/fetchImages";
 import Notification from "./Notification";
 
-class App extends Component {
-  state = {
-    images: [],
-    isLoading: false,
-    query: '',
-    page: 1,
-    showModal: false,
-    selectedImage: '',
-    total: 0
-  };
+function App() {
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [total, setTotal] = useState(0);
 
-  whetherToFetchImages = (prevState) => {
-    const {query, page, total, images} = this.state;
-    return query.toLowerCase() !== prevState.query.toLowerCase()
-      || (page !== prevState.page && images.length <= total);
-  }
-
-  async componentDidUpdate(prevProps, prevState) {
-    if (this.whetherToFetchImages(prevState)) {
-      await this.fetchImages();
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        setIsLoading(true);
+        const {hits, totalHits} = await getImagesByQueryAndPage(query, page);
+        setImages(prevImages => [...prevImages, ...hits]);
+        setTotal(totalHits);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (query) {
+      fetchImages();
     }
-  }
+  }, [query, page]);
 
-  handleFormSubmit = query => {
-    if(this.state.query.toLowerCase() === query.toLowerCase()) return;
-    this.setState({query, page: 1, images: []});
+  const handleFormSubmit = newQuery => {
+    if (query.toLowerCase() === newQuery.toLowerCase()) return;
+    setQuery(newQuery);
+    setPage(1);
+    setImages([]);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
 
-  fetchImages = async () => {
-    try {
-      const {query, page} = this.state;
-      const {hits, totalHits} = await getImagesByQueryAndPage(query, page);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...hits],
-        total: totalHits
-      }));
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.setState({isLoading: false});
-    }
+
+  const openModal = imageURL => {
+    setSelectedImage(imageURL);
+    setShowModal(true);
   };
 
-  openModal = imageURL => {
-    this.setState({selectedImage: imageURL, showModal: true});
+  const closeModal = () => {
+    setShowModal(false);
   };
 
-  closeModal = () => {
-    this.setState({showModal: false});
-  };
-
-  render() {
-    const {images, isLoading, showModal, selectedImage, total} = this.state;
-    return (
-      <div>
-        <Searchbar onSubmit={this.handleFormSubmit}/>
-        <ImageGallery images={images} onClick={this.openModal}/>
-        {isLoading && <Loader/>}
-        {!isLoading && !images.length && <Notification/>}
-        { !isLoading && !!images.length && images.length < total &&(
-          <Button onLoadMore={this.handleLoadMore}/>
-        )}
-        {showModal && (
-          <Modal onClose={this.closeModal}>
-            <img src={selectedImage} alt=""/>
-          </Modal>
-        )}
-      </div>
-    );
-  }
+  return (
+    <div>
+      <Searchbar onSubmit={handleFormSubmit}/>
+      <ImageGallery images={images} onClick={openModal}/>
+      {isLoading && <Loader/>}
+      {!isLoading && !images.length && <Notification/>}
+      {!isLoading && !!images.length && images.length < total && (
+        <Button onLoadMore={handleLoadMore}/>
+      )}
+      {showModal && (
+        <Modal onClose={closeModal}>
+          <img src={selectedImage} alt=""/>
+        </Modal>
+      )}
+    </div>
+  );
 }
 
 export default App;
