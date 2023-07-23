@@ -1,47 +1,42 @@
-import React from 'react';
-import PropTypes from "prop-types";
+import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
-class Modal extends React.Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-  }
+function Modal({ children, onClose }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === 'Escape') {
+        onClose();
+      }
+    };
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
+    window.addEventListener('keydown', handleKeyDown);
 
-  handleKeyDown = e => {
-    if (e.code === 'Escape') {
-      this.props.onClose();
-    }
-  };
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
-  handleClick = e => {
+  const handleClick = (e) => {
     if (e.target === e.currentTarget) {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  render() {
-    const { children } = this.props;
-
-    return (
-      <div className="Overlay" onClick={this.handleClick}>
-        <div className="Modal">
-          <button className="Modal-closeButton" onClick={this.handleClick}>
-            &times;
-          </button>
-          {children}
-        </div>
+  return (
+    <div className="Overlay" onClick={handleClick}>
+      <div className="Modal">
+        <button className="Modal-closeButton" onClick={handleClick}>
+          &times;
+        </button>
+        {children}
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 Modal.propTypes = {
   children: PropTypes.node.isRequired,
   onClose: PropTypes.func.isRequired,
 };
-
 
 export default Modal;

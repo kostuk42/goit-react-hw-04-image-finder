@@ -1,38 +1,43 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import ImageGalleryItem from './ImageGalleryItem';
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 
-class ImageGallery extends React.Component {
-  galleryRef = React.createRef();
+function ImageGallery({ images, onClick }) {
+  const galleryRef = useRef(null);
+  const [shouldScrollDown, setShouldScrollDown] = useState(false);
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.images.length !== this.props.images.length) {
-      this.scrollDown();
+  useEffect(() => {
+    if (shouldScrollDown) {
+      scrollDown();
     }
-  }
+  }, [shouldScrollDown]);
 
-  scrollDown() {
-    const { lastChild } = this.galleryRef.current;
+  useEffect(() => {
+    const prevImagesLength = galleryRef.current.children.length;
+    if (prevImagesLength !== images.length) {
+      setShouldScrollDown(true);
+    }
+  }, [images]);
+
+  const scrollDown = () => {
+    const { lastChild } = galleryRef.current;
     if (lastChild) {
       lastChild.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+    setShouldScrollDown(false);
+  };
 
-  render() {
-    const { images, onClick } = this.props;
-
-    return (
-      <ul className="ImageGallery" ref={this.galleryRef}>
-        {images.map(image => (
-          <ImageGalleryItem
-            key={image.id}
-            imageUrl={image.webformatURL}
-            onClick={() => onClick(image.largeImageURL)}
-          />
-        ))}
-      </ul>
-    );
-  }
+  return (
+    <ul className="ImageGallery" ref={galleryRef}>
+      {images.map((image) => (
+        <ImageGalleryItem
+          key={image.id}
+          imageUrl={image.webformatURL}
+          onClick={() => onClick(image.largeImageURL)}
+        />
+      ))}
+    </ul>
+  );
 }
 
 ImageGallery.propTypes = {
